@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>やましくないchat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="wrapper">
+    <h1 id="title">やましくないchat</h1>
+    <!-- 入力場所を作成しよう -->
+    <div class="btn-area">
+      <div>
+        <button type="button" id="start-btn">やましくない！</button>
+      </div>
+      <div>
+        <button type="button" id="secret-btn">やましい…</button>
+      </div>
+    </div>
+    <form id="chat-form" class="none">
+      <fieldset>
+        <legend>チャット入力画面</legend>
+        <div>
+          name: <input type="text" id="name">
+        </div>
+        <div>
+          text: <input type="text" id="text">
+        </div>
+        <div id="secret-check">
+          secret: <input type="checkbox" name="secret" id="secret">
+        </div>
+        <div>
+          <button type="button" id="send">send</button>
+          <p>Enterで送信</p>
+        </div>
+      </fieldset>
+    </form>
+
+    <!-- データ出力場所 -->
+    <ul id="output"></ul>
+  </div>
+
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script>
+    // 日時をいい感じの形式にする関数
+    function convertTimestampToDatetime(timestamp) {
+      const _d = timestamp ? new Date(timestamp * 1000) : new Date();
+      const Y = _d.getFullYear();
+      const m = (_d.getMonth() + 1).toString().padStart(2, '0');
+      const d = _d.getDate().toString().padStart(2, '0');
+      const H = _d.getHours().toString().padStart(2, '0');
+      const i = _d.getMinutes().toString().padStart(2, '0');
+      const s = _d.getSeconds().toString().padStart(2, '0');
+      return `${Y}/${m}/${d} ${H}:${i}:${s}`;
+    }
+  </script>
+
+  <!-- 以下にfirebaseのコードを貼り付けよう -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.5.0/firebase-app.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      serverTimestamp,
+      query,
+      orderBy,
+      onSnapshot,
+    } from "https://www.gstatic.com/firebasejs/9.5.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBLWweBZpBhfsM-J6zYXJotEm-niUxZO0E",
+      authDomain: "chat-practice-fa057.firebaseapp.com",
+      projectId: "chat-practice-fa057",
+      storageBucket: "chat-practice-fa057.appspot.com",
+      messagingSenderId: "1065857631468",
+      appId: "1:1065857631468:web:6970686149a639c6ae11c9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    //やましくないボタンの場合//
+
+    $("#start-btn").on("click", function () {
+      $("#chat-form").removeClass("none");
+      $("#start-btn").addClass("none");
+      $("#secret-btn").addClass("none");
+      $("#secret-check").addClass("none");
+    })
+
+    //やましいボタンの場合//
+
+    $("#secret-btn").on("click", function () {
+      $("#chat-form").removeClass("none");
+      $("#start-btn").addClass("none");
+      $("#secret-btn").addClass("none");
+      $("#title").text("やましいchat");
+      $("#secret").prop("checked", true);
+    })
+
+    //送信の操作//
+
+    $("#text").on("keydown", function (e) {
+      if (e.keyCode === 13) {
+        const data = {
+          name: $("#name").val(),
+          text: $("#text").val(),
+          time: serverTimestamp(),
+        };
+
+        if ($("#secret").prop("checked") == true) {
+
+          addDoc(collection(db, "chat-secret"), data);
+          $("#text").val("");
+
+          const q = query(collection(db, "chat-secret"), orderBy("time", "desc"));
+
+          onSnapshot(q, (querySnapshot) => {
+            console.log(querySnapshot.docs);
+            const dataArray = [];
+            querySnapshot.docs.forEach(function (doc) {
+              const data = {
+                id: doc.id,
+                data: doc.data(),
+              };
+              dataArray.push(data);
+            });
+            console.log(dataArray);
+
+            const tagArray = [];
+            dataArray.forEach(function (data) {
+              tagArray.push(`
+            <li id="${data.id}">
+               <p>${data.data.name}
+                at ${convertTimestampToDatetime(data.data.time.seconds)}</p>
+               <p>${data.data.text}</p>
+            </li>
+            `);
+            });
+
+            $("#output").html(tagArray);
+          });
+
+        } else {
+
+          addDoc(collection(db, "chat"), data);
+          $("#text").val("");
+          $("#secret").html(secret.checked = false);
+
+          const q = query(collection(db, "chat"), orderBy("time", "desc"));
+
+          onSnapshot(q, (querySnapshot) => {
+            console.log(querySnapshot.docs);
+            const dataArray = [];
+            querySnapshot.docs.forEach(function (doc) {
+              const data = {
+                id: doc.id,
+                data: doc.data(),
+              };
+              dataArray.push(data);
+            });
+            console.log(dataArray);
+
+            const tagArray = [];
+            dataArray.forEach(function (data) {
+              tagArray.push(`
+              <li id="${data.id}">
+                <p>${data.data.name}
+                  at ${convertTimestampToDatetime(data.data.time.seconds)}</p>
+                <p>${data.data.text}</p>
+              </li>
+              `);
+            });
+
+            $("#output").html(tagArray);
+          });
+        };
+      }
+    });
+
+
+    $("#send").on("click", function () {
+      const data = {
+        name: $("#name").val(),
+        text: $("#text").val(),
+        time: serverTimestamp(),
+      };
+
+      if ($("#secret").prop("checked") == true) {
+
+        addDoc(collection(db, "chat-secret"), data);
+        $("#text").val("");
+
+        const q = query(collection(db, "chat-secret"), orderBy("time", "desc"));
+
+        onSnapshot(q, (querySnapshot) => {
+          console.log(querySnapshot.docs);
+          const dataArray = [];
+          querySnapshot.docs.forEach(function (doc) {
+            const data = {
+              id: doc.id,
+              data: doc.data(),
+            };
+            dataArray.push(data);
+          });
+          console.log(dataArray);
+
+          const tagArray = [];
+          dataArray.forEach(function (data) {
+            tagArray.push(`
+            <li id="${data.id}">
+               <p>${data.data.name}
+                at ${convertTimestampToDatetime(data.data.time.seconds)}</p>
+               <p>${data.data.text}</p>
+            </li>
+            `);
+          });
+
+          $("#output").html(tagArray);
+        });
+
+      } else {
+
+        addDoc(collection(db, "chat"), data);
+        $("#text").val("");
+        $("#secret").html(secret.checked = false);
+
+        const q = query(collection(db, "chat"), orderBy("time", "desc"));
+
+        onSnapshot(q, (querySnapshot) => {
+          console.log(querySnapshot.docs);
+          const dataArray = [];
+          querySnapshot.docs.forEach(function (doc) {
+            const data = {
+              id: doc.id,
+              data: doc.data(),
+            };
+            dataArray.push(data);
+          });
+          console.log(dataArray);
+
+          const tagArray = [];
+          dataArray.forEach(function (data) {
+            tagArray.push(`
+              <li id="${data.id}">
+                <p>${data.data.name}
+                  at ${convertTimestampToDatetime(data.data.time.seconds)}</p>
+                <p>${data.data.text}</p>
+              </li>
+              `);
+          });
+
+          $("#output").html(tagArray);
+        });
+      };
+    });
+
+
+  </script>
+
+</body>
+
+</html>

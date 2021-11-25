@@ -1,0 +1,40 @@
+html{
+    height: 100%;
+}
+
+body{
+    width: 960px;
+    height: 100%;
+    margin: 0 auto;
+    padding-top: 20px;
+    text-align: center;
+}
+
+.wrapper{
+    width: 100%;
+    min-height: 100%;
+    background-color: pink;
+    border: solid 1px black;
+}
+
+#output li {
+      background: rgb(250, 162, 162);
+      list-style: none;
+}
+
+.btn-area{
+    width: 70%;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-around;
+}
+
+#start-btn, #secret-btn{
+    font-size: 24px;
+    width: 300px;
+    height: 50px;
+}
+
+.none {
+    display: none;
+}
